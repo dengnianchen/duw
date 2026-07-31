@@ -88,14 +88,21 @@ missing size.
 
 ## Cache
 
-Indexes are written to `~/.cache/duw/<hash>.json.gz`, keyed by the absolute
-root path. On startup or `Analyze`, a matching cache is loaded instantly
-(saves you the initial scan). Use `--rebuild` on the CLI or the **Rebuild**
-button in the UI to force a fresh scan.
+All scans share a single merged on-disk index: `~/.cache/duw/tree.json.gz`.
+Every scanned directory lives in one in-memory forest keyed by absolute path,
+so:
 
-A known limitation: caches are keyed per root, so analyzing `/foo` does not
-speed up a later analysis of `/foo/bar`, and rescanning a subdirectory does
-not update its ancestors' caches. Future versions may unify this.
+- Analyzing an **upper** directory reuses any already-scanned subdirectory
+  underneath it — only the not-yet-scanned parts get walked.
+- Rescanning a **lower** directory updates its subtree in place and
+  propagates the new totals up to every scanned ancestor, so their sizes
+  stay accurate without a full rescan.
+
+Use `--rebuild` on the CLI or the **Rebuild** button in the UI to force a
+fresh scan of the given directory (ignoring the cached copy of its subtree).
+
+Legacy per-root caches from earlier versions (`<hash>.json.gz`) are
+auto-migrated into the merged cache on first startup and then removed.
 
 ## HTTP API
 
